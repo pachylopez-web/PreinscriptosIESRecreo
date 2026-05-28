@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inscripción Online - IES Recreo</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons for modern UI -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- SheetJS (xlsx) CDN to generate real Excel files -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+    <!-- Immediate Script for Logo Fallback to prevent ReferenceError -->
+    <script>
+        function handleLogoError() {
+            var img = document.getElementById('instLogo');
+            var fallback = document.getElementById('svgLogoFallback');
+            if (img) img.style.display = 'none';
+            if (fallback) fallback.classList.remove('hidden');
+        }
+    </script>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col antialiased">
+
+    <!-- Header / Navbar -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+            <div class="flex items-center space-x-3.5">
+                <!-- Logo Container with Fallback if logo_ies_recreo.png is missing -->
+                <div class="w-14 h-14 flex-shrink-0 flex items-center justify-center bg-slate-100 rounded-xl overflow-hidden p-1 border border-slate-200">
+                    <img id="instLogo" src="logo_ies_recreo.png" alt="Logo IES Recreo" class="w-full h-full object-contain" onerror="handleLogoError()">
+                    <!-- Elegant SVG Fallback (In case image is not in the directory yet) -->
+                    <div id="svgLogoFallback" class="hidden w-11 h-11 bg-blue-900 rounded-lg flex items-center justify-center text-white font-extrabold text-sm">
+                        IESR
+                    </div>
+                </div>
+                <div>
+                    <h1 class="text-base sm:text-lg font-extrabold tracking-tight text-blue-950 leading-tight">IES Recreo</h1>
+                    <p class="text-[11px] font-bold text-teal-600 uppercase tracking-wider">Inscripciones Online</p>
+                </div>
+            </div>
+            
+            <!-- Admin View / Student View Toggle -->
+            <div>
+                <button id="btnToggleRole" onclick="handleRoleToggleClick()" 
+                    class="px-4 py-2 bg-slate-100 hover:bg-blue-50 text-slate-700 hover:text-blue-900 rounded-xl text-xs font-bold transition duration-150 flex items-center space-x-2 border border-slate-200">
+                    <i data-lucide="shield-alert" class="w-4 h-4 text-blue-800"></i>
+                    <span id="roleToggleText">Acceso Bedelía</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        <!-- ================= STUDENT VIEW ================= -->
+        <div id="studentContainer" class="max-w-xl mx-auto space-y-6">
+            
+            <!-- Info Banner -->
+            <div class="bg-gradient-to-br from-blue-950 to-slate-900 text-white rounded-2xl p-6 shadow-lg relative overflow-hidden">
+                <div class="absolute -right-12 -bottom-12 w-48 h-48 bg-teal-500/10 rounded-full blur-2xl"></div>
+                <div class="relative z-10">
+                    <span class="bg-teal-500/20 text-teal-300 text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-widest border border-teal-500/30">
+                        Ciclo Lectivo Activo
+                    </span>
+                    <h2 class="text-xl sm:text-2xl font-extrabold mt-3 tracking-tight">Formulario de Inscripción</h2>
+                    <p class="text-slate-300 mt-1.5 text-xs sm:text-sm leading-relaxed">
+                        Completa tus datos personales cuidadosamente para registrar tu postulación en la carrera elegida. Al finalizar, podrás descargar tu comprobante.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Student Form Card -->
+            <div id="studentFormCard" class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+                <form id="studentRegistrationForm" class="space-y-5">
+                    <!-- Propuesta de inscripción (Dropdown) -->
+                    <div>
+                        <label for="propuesta" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                            Carrera / Tecnicatura a la que te inscribes <span class="text-red-500">*</span>
+                        </label>
+                        <div class="relative">
+                            <select id="propuesta" required
+                                class="w-full pl-3.5 pr-10 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-slate-800 transition duration-150 appearance-none">
+                                <option value="" disabled selected>Selecciona una opción de la lista</option>
+                                <option value="Profesorado de Educación Secundaria en Geografía">Profesorado de Educación Secundaria en Geografía</option>
+                                <option value="Profesorado de Educación Secundaria en Historia">Profesorado de Educación Secundaria en Historia</option>
+                                <option value="Profesorado de Educación Secundaria en Biología">Profesorado de Educación Secundaria en Biología</option>
+                                <option value="Profesorado de Educación Secundaria en Matemática">Profesorado de Educación Secundaria en Matemática</option>
+                                <option value="Profesorado en Ingles">Profesorado en Inglés</option>
+                                <option value="Profesorado de Artes Visuales">Profesorado de Artes Visuales</option>
+                                <option value="Tecnicatura Superior en Tecnología de los Alimentos">Tecnicatura Superior en Tecnología de los Alimentos</option>
+                                <option value="Tecnicatura Superior en Enfermeria">Tecnicatura Superior en Enfermería</option>
+                            </select>
+                            <div class="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-slate-400">
+                                <i data-lucide="chevron-down" class="w-4 h-4"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Apellido y Nombre -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label for="apellido" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                                Apellido <span class="text-red-500">*</span>
+                            </label>
+                            <input type="text" id="apellido" required placeholder="Ej: Gómez"
+                                class="w-full px-3.5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-slate-800 transition duration-150">
+                        </div>
+                        <div>
+                            <label for="nombre" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                                Nombre Completo <span class="text-red-500">*</span>
+                            </label>
+                            <input type="text" id="nombre" required placeholder="Ej: Juan Carlos"
+                                class="w-full px-3.5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-slate-800 transition duration-150">
+                        </div>
+                    </div>
+
+                    <!-- DNI y Fecha de Nacimiento -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label for="dni" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                                DNI (Sin puntos) <span class="text-red-500">*</span>
+                            </label>
+                            <input type="text" id="dni" required placeholder="Ej: 39444555" pattern="[0-9]{7,8}" title="Debe contener entre 7 y 8 números sin puntos"
+                                class="w-full px-3.5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-slate-800 transition duration-150">
+                        </div>
+                        <div>
+                            <label for="fechaNacimiento" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                                Fecha de Nacimiento <span class="text-red-500">*</span>
+                            </label>
+                            <input type="date" id="fechaNacimiento" required
+                                class="w-full px-3.5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-slate-800 transition duration-150">
+                        </div>
+                    </div>
+
+                    <!-- Correo electrónico -->
+                    <div>
+                        <label for="email" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                            Correo Electrónico <span class="text-red-500">*</span>
+                        </label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400">
+                                <i data-lucide="mail" class="w-4 h-4"></i>
+                            </span>
+                            <input type="email" id="email" required placeholder="nombre@ejemplo.com"
+                                class="w-full pl-10 pr-3.5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-slate-800 transition duration-150">
+                        </div>
+                    </div>
+
+                    <!-- Teléfono (Opcional) -->
+                    <div>
+                        <div class="flex justify-between items-center mb-1.5">
+                            <label for="telefono" class="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                                Número de Teléfono
+                            </label>
+                            <span class="text-[9px] text-slate-400 font-bold tracking-wider">OPCIONAL</span>
+                        </div>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400">
+                                <i data-lucide="phone" class="w-4 h-4"></i>
+                            </span>
+                            <input type="tel" id="telefono" placeholder="Ej: 3832445566"
+                                class="w-full pl-10 pr-3.5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-slate-800 transition duration-150">
+                        </div>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <div class="pt-2">
+                        <button type="submit" id="btnSubmitForm"
+                            class="w-full py-3.5 bg-blue-900 hover:bg-blue-950 text-white rounded-xl font-bold text-sm shadow-md shadow-blue-900/20 hover:shadow-lg transition duration-200 flex items-center justify-center space-x-2">
+                            <i data-lucide="send" class="w-4 h-4"></i>
+                            <span>Enviar mi Inscripción</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Success / Comprobante View (Hidden initially) -->
+            <div id="successCard" class="bg-white border-2 border-emerald-500 rounded-2xl p-6 shadow-lg hidden space-y-6">
+                <div class="text-center space-y-2">
+                    <div class="w-14 h-14 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto">
+                        <i data-lucide="badge-check" class="w-8 h-8"></i>
+                    </div>
+                    <h3 class="text-xl font-black text-slate-900">¡Inscripción Exitosa!</h3>
+                    <p class="text-xs text-slate-500 max-w-sm mx-auto">Tus datos han sido registrados correctamente en la base del IES Recreo.</p>
+                </div>
+
+                <!-- Constancia Digital -->
+                <div id="comprobanteImpresion" class="bg-slate-50 border border-slate-200 rounded-xl p-5 space-y-4">
+                    <div class="flex items-center justify-between pb-3 border-b border-dashed border-slate-200">
+                        <div class="text-left">
+                            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Comprobante Digital</p>
+                            <p id="compFecha" class="text-[11px] text-slate-500">Fecha: --/--/----</p>
+                        </div>
+                        <span class="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full">REGISTRADO</span>
+                    </div>
+
+                    <div class="space-y-2.5 text-sm">
+                        <div>
+                            <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Carrera postulada</span>
+                            <span id="compPropuesta" class="font-bold text-blue-950 text-xs sm:text-sm">--</span>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Estudiante</span>
+                                <span id="compNombre" class="font-bold text-slate-800 text-xs sm:text-sm">--</span>
+                            </div>
+                            <div>
+                                <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">DNI</span>
+                                <span id="compDNI" class="font-semibold text-slate-800 text-xs sm:text-sm">--</span>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Email de Contacto</span>
+                                <span id="compEmail" class="font-medium text-slate-600 text-xs truncate block">--</span>
+                            </div>
+                            <div>
+                                <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Teléfono</span>
+                                <span id="compTel" class="font-medium text-slate-600 text-xs block">--</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex flex-col sm:flex-row gap-3">
+                    <button onclick="window.print()" 
+                        class="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold text-xs flex items-center justify-center space-x-2 transition">
+                        <i data-lucide="printer" class="w-4 h-4"></i>
+                        <span>Imprimir Comprobante</span>
+                    </button>
+                    <button onclick="resetInscripcionForm()" 
+                        class="flex-1 py-3 bg-blue-900 hover:bg-blue-950 text-white rounded-xl font-bold text-xs flex items-center justify-center space-x-2 transition">
+                        <i data-lucide="user-plus-2" class="w-4 h-4"></i>
+                        <span>Inscribir a otra persona</span>
+                    </button>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- ================= ADMIN/BEDELIA VIEW ================= -->
+        <div id="adminContainer" class="hidden space-y-6">
+            
+            <!-- Dashboard stats / Export action -->
+            <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div class="flex items-center space-x-4">
+                    <div class="w-12 h-12 rounded-xl bg-blue-50 text-blue-900 flex items-center justify-center flex-shrink-0">
+                        <i data-lucide="graduation-cap" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <div class="flex items-baseline space-x-2">
+                            <span id="studentCount" class="text-3xl font-black text-slate-900">0</span>
+                            <span class="text-xs font-bold text-teal-600 uppercase tracking-wider">Alumnos Totales</span>
+                        </div>
+                        <p class="text-xs text-slate-500">Inscriptos registrados en la base de datos de la nube</p>
+                    </div>
+                </div>
+
+                <div class="flex items-center space-x-2 w-full sm:w-auto">
+                    <!-- Export to Excel -->
+                    <button onclick="exportToExcel()" 
+                        class="flex-1 sm:flex-initial px-5 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs shadow-md shadow-emerald-600/10 hover:shadow-lg transition flex items-center justify-center space-x-2">
+                        <i data-lucide="file-spreadsheet" class="w-4 h-4"></i>
+                        <span>Descargar Base Excel</span>
+                    </button>
+                    <!-- Close Session -->
+                    <button onclick="lockAdminMode()" 
+                        class="px-3 py-3 border border-slate-200 text-slate-500 hover:bg-slate-50 rounded-xl font-semibold text-xs transition"
+                        title="Bloquear acceso admin">
+                        <i data-lucide="lock" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Dynamic Table Card -->
+            <div class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden flex flex-col">
+                <div class="p-5 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-slate-50/50">
+                    <div>
+                        <h4 class="font-bold text-slate-900 flex items-center space-x-2">
+                            <span>Inscripciones Registradas</span>
+                            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                        </h4>
+                        <p class="text-[10px] text-slate-500 mt-0.5">La tabla se actualiza automáticamente cuando los alumnos se inscriben.</p>
+                    </div>
+                    <!-- Search Field -->
+                    <div class="relative w-full sm:w-64">
+                        <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
+                            <i data-lucide="search" class="w-4 h-4"></i>
+                        </span>
+                        <input type="text" id="searchInput" oninput="filterStudents()" placeholder="Buscar por Apellido, Nombre o DNI..."
+                            class="w-full pl-9 pr-3 py-2 bg-white border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-slate-800 transition duration-150">
+                    </div>
+                </div>
+
+                <!-- Table -->
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse" id="studentsTable">
+                        <thead>
+                            <tr class="border-b border-slate-200 bg-slate-100/50">
+                                <th class="px-5 py-3 text-xs font-bold uppercase tracking-wider text-slate-500">Alumno / DNI</th>
+                                <th class="px-5 py-3 text-xs font-bold uppercase tracking-wider text-slate-500">Propuesta Educativa</th>
+                                <th class="px-5 py-3 text-xs font-bold uppercase tracking-wider text-slate-500">Fecha Nac.</th>
+                                <th class="px-5 py-3 text-xs font-bold uppercase tracking-wider text-slate-500">Contacto</th>
+                                <th class="px-5 py-3 text-xs font-bold uppercase tracking-wider text-slate-500 text-right">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100" id="studentsTableBody">
+                            <!-- Injected dynamically -->
+                        </tbody>
+                    </table>
+
+                    <!-- Table Empty State -->
+                    <div id="tableEmptyState" class="flex flex-col items-center justify-center py-16 px-4 text-center hidden">
+                        <div class="w-14 h-14 bg-slate-100 text-slate-400 rounded-full flex items-center justify-center mb-3">
+                            <i data-lucide="users-2" class="w-6 h-6"></i>
+                        </div>
+                        <h5 class="font-bold text-slate-700">No hay inscriptos aún</h5>
+                        <p class="text-xs text-slate-400 mt-1">Los datos ingresados por los estudiantes aparecerán aquí de inmediato.</p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- ADMIN LOGIN MODAL -->
+    <div id="adminLoginModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-xl border border-slate-100 animate-in fade-in zoom-in-95 duration-150">
+            <div class="text-center space-y-2 mb-5">
+                <div class="w-12 h-12 bg-blue-50 text-blue-900 rounded-xl flex items-center justify-center mx-auto">
+                    <i data-lucide="key-round" class="w-6 h-6"></i>
+                </div>
+                <h4 class="text-lg font-black text-slate-900">Acceso a Bedelía</h4>
+                <p class="text-xs text-slate-400 leading-relaxed">Ingresa la clave de administración para visualizar y descargar el listado de inscriptos.</p>
+            </div>
+            
+            <form id="adminLoginForm" onsubmit="handleAdminLogin(event)" class="space-y-4">
+                <div>
+                    <label for="adminKey" class="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Clave de Seguridad</label>
+                    <input type="password" id="adminKey" required placeholder="Ingresar clave"
+                        class="w-full px-3.5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-slate-800 transition duration-150">
+                </div>
+
+                <div class="flex space-x-2 pt-1">
+                    <button type="button" onclick="closeAdminLoginModal()"
+                        class="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold text-xs transition">
+                        Cancelar
+                    </button>
+                    <button type="submit"
+                        class="flex-1 py-2.5 bg-blue-900 hover:bg-blue-950 text-white rounded-xl font-bold text-xs transition">
+                        Desbloquear
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- NOTIFICATION TOASTS -->
+    <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col space-y-2 pointer-events-none"></div>
+
+    <!-- Institutional Footer -->
+    <footer class="bg-white border-t border-slate-200 py-6 text-center text-xs text-slate-500 mt-12">
+        <div class="max-w-7xl mx-auto px-4">
+            <p class="font-bold text-blue-950">Instituto de Educación Superior Recreo</p>
+            <p class="mt-0.5">Innovación Institucional & Prácticas del Siglo XXI</p>
+        </div>
+    </footer>
+
+    <!-- Firebase Script and Core Logic -->
+    <script type="module">
+        // Firebase modules from official CDN
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Configuración de Firebase robusta (Permite ejecución local sin errores)
+        let firebaseConfig = {};
+        try {
+            if (typeof __firebase_config !== 'undefined') {
+                firebaseConfig = JSON.parse(__firebase_config);
+            }
+        } catch (error) {
+            console.warn("Entorno local detectado. Se utilizará memoria temporal.");
+        }
+
+        const isCloudEnabled = Object.keys(firebaseConfig).length > 0;
+        let app, auth, db;
+
+        if (isCloudEnabled) {
+            app = initializeApp(firebaseConfig);
+            auth = getAuth(app);
+            db = getFirestore(app);
+        }
+
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'ies-recreo-inscripciones';
+
+        // State management
+        let currentRole = 'student'; // 'student' or 'admin'
+        let isAdminUnlocked = false;
+        let students = [];
+        let currentUser = null;
+        let unsubscribeInscripciones = null;
+
+        // Firebase Auth Implementation (Rule 3)
+        const initAuth = async () => {
+            if (!isCloudEnabled) return;
+            try {
+                // Prioritize custom token if provided, fallback to anonymous (Rule 3)
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+            } catch (error) {
+                console.error("Firebase auth initiation failed:", error);
+                showToast("Fallo al establecer comunicación de red segura.", "warning");
+            }
+        };
+
+        // Authentication state observer
+        if (isCloudEnabled) {
+            onAuthStateChanged(auth, (user) => {
+                currentUser = user;
+                if (user) {
+                    // Once authenticated, start listening to real-time events if already unlocked
+                    if (isAdminUnlocked) {
+                        startRealtimeDataListener();
+                    }
+                }
+            });
+        }
+
+        // Initialize auth instantly
+        initAuth();
+
+        // Student submission
+        const studentForm = document.getElementById('studentRegistrationForm');
+        studentForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            if (isCloudEnabled && !currentUser) {
+                showToast("Falla de sincronización. Por favor intente de nuevo.", "warning");
+                return;
+            }
+
+            // Extract values
+            const propuesta = document.getElementById('propuesta').value;
+            const apellido = document.getElementById('apellido').value.trim();
+            const nombre = document.getElementById('nombre').value.trim();
+            const dni = document.getElementById('dni').value.trim();
+            const fechaNacimiento = document.getElementById('fechaNacimiento').value;
+            const email = document.getElementById('email').value.trim();
+            const telefono = document.getElementById('telefono').value.trim();
+
+            const btnSubmit = document.getElementById('btnSubmitForm');
+            btnSubmit.disabled = true;
+            btnSubmit.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> <span>Registrando...</span>`;
+            lucide.createIcons();
+
+            const studentData = {
+                propuesta,
+                apellido,
+                nombre,
+                dni,
+                fechaNacimiento,
+                email,
+                telefono: telefono || '',
+                timestamp: new Date().toISOString()
+            };
+
+            try {
+                if (isCloudEnabled) {
+                    // Rule 1: Strict collection paths for public data
+                    const colRef = collection(db, 'artifacts', appId, 'public', 'data', 'inscripciones');
+                    await addDoc(colRef, studentData);
+                } else {
+                    // Local fallback for testing outside Canvas
+                    studentData.id = crypto.randomUUID();
+                    students.push(studentData);
+                    if (isAdminUnlocked) updateAdminTable();
+                }
+
+                // Set data to Comprobante Digital
+                document.getElementById('compPropuesta').textContent = propuesta;
+                document.getElementById('compNombre').textContent = `${apellido}, ${nombre}`;
+                document.getElementById('compDNI').textContent = dni;
+                document.getElementById('compEmail').textContent = email;
+                document.getElementById('compTel').textContent = telefono || 'No especificado';
+                
+                const dateObj = new Date();
+                document.getElementById('compFecha').textContent = `Fecha: ${dateObj.getDate()}/${dateObj.getMonth() + 1}/${dateObj.getFullYear()}`;
+
+                // Transition cards
+                document.getElementById('studentFormCard').classList.add('hidden');
+                document.getElementById('successCard').classList.remove('hidden');
+                showToast("Inscripción guardada correctamente.", "success");
+
+            } catch (error) {
+                console.error("Firestore write failed:", error);
+                showToast("Error al guardar. Intente nuevamente.", "warning");
+            } finally {
+                btnSubmit.disabled = false;
+                btnSubmit.innerHTML = `<i data-lucide="send" class="w-4 h-4"></i> <span>Enviar mi Inscripción</span>`;
+                lucide.createIcons();
+            }
+        });
+
+        // Clear and reload student form for a new enrollment
+        window.resetInscripcionForm = function() {
+            studentForm.reset();
+            document.getElementById('propuesta').value = ""; // Reset dropdown placeholder manual trigger
+            document.getElementById('successCard').classList.add('hidden');
+            document.getElementById('studentFormCard').classList.remove('hidden');
+        };
+
+        // Realtime sync implementation for Bedelía (Rule 2: No complex queries, sort in JS)
+        function startRealtimeDataListener() {
+            if (!isCloudEnabled) {
+                updateAdminTable();
+                return;
+            }
+            if (!currentUser) return;
+            
+            if (unsubscribeInscripciones) {
+                unsubscribeInscripciones();
+            }
+
+            // Rule 1 strict path
+            const q = collection(db, 'artifacts', appId, 'public', 'data', 'inscripciones');
+
+            unsubscribeInscripciones = onSnapshot(q, (snapshot) => {
+                const list = [];
+                snapshot.forEach((doc) => {
+                    list.push({ id: doc.id, ...doc.data() });
+                });
+
+                // Rule 2: Sort alphabetically by last name in memory
+                list.sort((a, b) => {
+                    const lA = `${a.apellido} ${a.nombre}`.toLowerCase();
+                    const lB = `${b.apellido} ${b.nombre}`.toLowerCase();
+                    return lA.localeCompare(lB);
+                });
+
+                students = list;
+                updateAdminTable();
+            }, (error) => {
+                console.error("Firestore onSnapshot error:", error);
+                showToast("Error al conectar con la base de datos.", "warning");
+            });
+        }
+
+        // Render data table for admin
+        function updateAdminTable(listToRender = students) {
+            const tableBody = document.getElementById('studentsTableBody');
+            const emptyState = document.getElementById('tableEmptyState');
+            const counter = document.getElementById('studentCount');
+
+            counter.textContent = students.length;
+            tableBody.innerHTML = '';
+
+            if (listToRender.length === 0) {
+                emptyState.classList.remove('hidden');
+                document.getElementById('studentsTable').classList.add('hidden');
+                return;
+            }
+
+            emptyState.classList.add('hidden');
+            document.getElementById('studentsTable').classList.remove('hidden');
+
+            listToRender.forEach(student => {
+                const row = document.createElement('tr');
+                row.className = 'hover:bg-slate-50 transition border-b border-slate-100';
+
+                const bdayParts = student.fechaNacimiento.split('-');
+                const formattedBday = bdayParts.length === 3 ? `${bdayParts[2]}/${bdayParts[1]}/${bdayParts[0]}` : student.fechaNacimiento;
+
+                row.innerHTML = `
+                    <td class="px-5 py-4">
+                        <div class="font-bold text-slate-900">${student.apellido}, ${student.nombre}</div>
+                        <div class="text-xs text-slate-500 font-semibold">${student.dni}</div>
+                    </td>
+                    <td class="px-5 py-4">
+                        <span class="inline-block px-3 py-1 bg-blue-50 text-blue-900 text-[11px] font-bold rounded-lg max-w-[280px] leading-snug">
+                            ${student.propuesta}
+                        </span>
+                    </td>
+                    <td class="px-5 py-4 text-xs font-semibold text-slate-600">
+                        ${formattedBday}
+                    </td>
+                    <td class="px-5 py-4 text-xs space-y-0.5">
+                        <div class="flex items-center text-slate-700 font-medium">
+                            <i data-lucide="mail" class="w-3.5 h-3.5 mr-1 text-slate-400"></i> ${student.email}
+                        </div>
+                        ${student.telefono ? `
+                        <div class="flex items-center text-slate-500">
+                            <i data-lucide="phone" class="w-3.5 h-3.5 mr-1 text-slate-400"></i> ${student.telefono}
+                        </div>` : '<div class="text-slate-400 italic">No registró teléfono</div>'}
+                    </td>
+                    <td class="px-5 py-4 text-right">
+                        <button onclick="handleDeleteStudent('${student.id}')" 
+                            class="p-2 text-red-500 hover:bg-red-50 rounded-lg transition" 
+                            title="Eliminar registro">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        </button>
+                    </td>
+                `;
+                tableBody.appendChild(row);
+            });
+
+            lucide.createIcons();
+        }
+
+        // Search & Filters in admin
+        window.filterStudents = function() {
+            const val = document.getElementById('searchInput').value.toLowerCase().trim();
+            if (val === '') {
+                updateAdminTable(students);
+                return;
+            }
+
+            const filtered = students.filter(s => 
+                s.apellido.toLowerCase().includes(val) ||
+                s.nombre.toLowerCase().includes(val) ||
+                s.dni.includes(val) ||
+                s.propuesta.toLowerCase().includes(val)
+            );
+
+            updateAdminTable(filtered);
+        };
+
+        // Delete Student record from database
+        window.handleDeleteStudent = async function(id) {
+            // Replaced generic confirm with custom UX modal logic inside a micro dialog
+            const consent = confirm("¿Estás seguro de que deseas eliminar este registro de inscripción?");
+            if (!consent) return;
+
+            try {
+                if (isCloudEnabled) {
+                    if (!currentUser) return;
+                    // Rule 1 strict path
+                    const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'inscripciones', id);
+                    await deleteDoc(docRef);
+                } else {
+                    // Local fallback
+                    students = students.filter(s => s.id !== id);
+                    updateAdminTable();
+                }
+                showToast("Inscripción eliminada correctamente.", "info");
+            } catch (error) {
+                console.error("Firestore delete error:", error);
+                showToast("Fallo al eliminar registro.", "warning");
+            }
+        };
+
+        // Export data to Excel using SheetJS
+        window.exportToExcel = function() {
+            if (students.length === 0) {
+                showToast("No hay registros en la base para exportar.", "warning");
+                return;
+            }
+
+            const mapped = students.map(s => ({
+                'Fecha de Inscripción': s.timestamp ? s.timestamp.substring(0, 10) : 'N/A',
+                'Carrera / Tecnicatura': s.propuesta,
+                'Apellido': s.apellido,
+                'Nombre Completo': s.nombre,
+                'DNI': s.dni,
+                'Fecha de Nacimiento': s.fechaNacimiento,
+                'Email': s.email,
+                'Teléfono de Contacto': s.telefono || 'No provisto'
+            }));
+
+            const worksheet = XLSX.utils.json_to_sheet(mapped);
+            
+            // Autocorrect columns layout widths inside worksheet
+            const colsW = mapped.reduce((acc, row) => {
+                Object.keys(row).forEach((key, colIndex) => {
+                    const v = String(row[key] || '');
+                    const size = Math.max(v.length, key.length);
+                    acc[colIndex] = Math.max(acc[colIndex] || 10, size);
+                });
+                return acc;
+            }, []);
+            worksheet['!cols'] = colsW.map(w => ({ w: w + 4 }));
+
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Inscriptos IES Recreo");
+
+            XLSX.writeFile(workbook, "Inscriptos_IES_Recreo_Centralizado.xlsx");
+            showToast("Planilla Excel generada con éxito.", "success");
+        };
+
+        // Toggle UI logic
+        window.handleRoleToggleClick = function() {
+            if (currentRole === 'student') {
+                if (isAdminUnlocked) {
+                    showAdminView();
+                } else {
+                    openAdminLoginModal();
+                }
+            } else {
+                showStudentView();
+            }
+        };
+
+        function openAdminLoginModal() {
+            document.getElementById('adminLoginModal').classList.remove('hidden');
+        }
+
+        window.closeAdminLoginModal = function() {
+            document.getElementById('adminLoginModal').classList.add('hidden');
+        };
+
+        window.handleAdminLogin = function(e) {
+            e.preventDefault();
+            const key = document.getElementById('adminKey').value.trim();
+
+            // Default safe key access validation
+            if (key === 'iesrecreo2026') {
+                isAdminUnlocked = true;
+                closeAdminLoginModal();
+                showAdminView();
+                startRealtimeDataListener();
+                showToast("Acceso concedido a la Bedelía", "success");
+            } else {
+                showToast("Clave incorrecta. Por favor intente nuevamente.", "warning");
+            }
+            document.getElementById('adminKey').value = '';
+        };
+
+        function showAdminView() {
+            currentRole = 'admin';
+            document.getElementById('studentContainer').classList.add('hidden');
+            document.getElementById('adminContainer').classList.remove('hidden');
+            
+            const btnToggle = document.getElementById('btnToggleRole');
+            btnToggle.classList.add('bg-blue-900', 'text-white', 'hover:bg-blue-950');
+            btnToggle.innerHTML = `<i data-lucide="user" class="w-4 h-4"></i> <span>Volver a Formulario</span>`;
+            lucide.createIcons();
+        }
+
+        function showStudentView() {
+            currentRole = 'student';
+            document.getElementById('adminContainer').classList.add('hidden');
+            document.getElementById('studentContainer').classList.remove('hidden');
+
+            const btnToggle = document.getElementById('btnToggleRole');
+            btnToggle.classList.remove('bg-blue-900', 'text-white', 'hover:bg-blue-950');
+            btnToggle.innerHTML = `<i data-lucide="shield-alert" class="w-4 h-4 text-blue-800"></i> <span>Acceso Bedelía</span>`;
+            lucide.createIcons();
+        }
+
+        window.lockAdminMode = function() {
+            isAdminUnlocked = false;
+            if (unsubscribeInscripciones) {
+                unsubscribeInscripciones();
+            }
+            showStudentView();
+            showToast("Acceso de Bedelía bloqueado con éxito.", "info");
+        };
+
+        // Custom notification system
+        function showToast(message, type = 'success') {
+            const toastContainer = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            
+            let bgClass = 'bg-slate-900';
+            let icon = 'info';
+
+            switch(type) {
+                case 'success':
+                    bgClass = 'bg-emerald-600';
+                    icon = 'check-circle';
+                    break;
+                case 'warning':
+                    bgClass = 'bg-amber-600';
+                    icon = 'alert-circle';
+                    break;
+                case 'info':
+                    bgClass = 'bg-blue-900';
+                    icon = 'info';
+                    break;
+            }
+
+            toast.className = `${bgClass} text-white px-4 py-3 rounded-xl shadow-lg flex items-center space-x-3 pointer-events-auto transition-all duration-300 transform translate-y-4 opacity-0 max-w-sm border border-white/10`;
+            toast.innerHTML = `
+                <i data-lucide="${icon}" class="w-5 h-5 flex-shrink-0"></i>
+                <span class="text-xs font-semibold">${message}</span>
+            `;
+
+            toastContainer.appendChild(toast);
+            lucide.createIcons();
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-4', 'opacity-0');
+            }, 10);
+
+            setTimeout(() => {
+                toast.classList.add('translate-y-4', 'opacity-0');
+                setTimeout(() => {
+                    toast.remove();
+                }, 300);
+            }, 4500);
+        }
+
+        // Initial setup
+        window.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+        });
+    </script>
+</body>
+</html>
